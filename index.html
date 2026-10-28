@@ -41,7 +41,7 @@
             "sap/m/Column",
             "sap/m/ColumnListItem",
             "sap/m/ObjectStatus",
-            "sap/m/ObjectIdentifier",
+            "sap/m/IllustratedMessage",
             "sap/m/VBox",
             "sap/m/HBox",
             "sap/m/Dialog",
@@ -56,14 +56,14 @@
             OverflowToolbar, ToolbarSpacer, ToolbarSeparator,
             Input, Select, Item, DateRangeSelection,
             Table, Column, ColumnListItem,
-            ObjectStatus, ObjectIdentifier,
+            ObjectStatus, IllustratedMessage,
             VBox, HBox,
             Dialog, MessageBox, MessageStrip, MessageToast,
             Grid
         ) {
 
             /* ═══════════════════════════════════════
-               DATA  –  6 TF / EMD scenarios
+               DATA
                ═══════════════════════════════════════ */
             var aAllData = [
                 { id:1, spNo:"SP-2026-0045", title:"Supply of Office Equipment – FY 2026",
@@ -71,31 +71,26 @@
                   tfRelevant:true,  tfAmount:"5,000.00",    tfCurrency:"EUR", tfPaid:false, tfDeadline:"30.09.2026", tfPayType:"Online",
                   emdRelevant:false, emdAmount:"",           emdCurrency:"EUR", emdPaid:false, emdDeadline:"",          emdPayType:"",
                   allowViewDetails:false },
-
                 { id:2, spNo:"SP-2026-0044", title:"IT Infrastructure Upgrade – Phase 2",
                   spType:"RFP", publishDate:"28.08.2026", submDeadline:"20.10.2026", status:"Published",
                   tfRelevant:true,  tfAmount:"10,000.00",   tfCurrency:"EUR", tfPaid:true,  tfDeadline:"10.09.2026", tfPayType:"Online",
                   emdRelevant:true,  emdAmount:"50,000.00",  emdCurrency:"EUR", emdPaid:false, emdDeadline:"01.10.2026", emdPayType:"Online",
                   allowViewDetails:true },
-
                 { id:3, spNo:"SP-2026-0043", title:"Municipal Roads Maintenance Contract",
                   spType:"RFP", publishDate:"20.08.2026", submDeadline:"25.10.2026", status:"Published",
                   tfRelevant:true,  tfAmount:"15,000.00",   tfCurrency:"EUR", tfPaid:true,  tfDeadline:"05.09.2026", tfPayType:"Offline",
                   emdRelevant:true,  emdAmount:"100,000.00", emdCurrency:"EUR", emdPaid:true,  emdDeadline:"15.09.2026", emdPayType:"Online",
                   allowViewDetails:true },
-
                 { id:4, spNo:"SP-2026-0042", title:"Public Health Supplies – Annual Contract",
                   spType:"RFQ", publishDate:"15.08.2026", submDeadline:"05.10.2026", status:"Published",
                   tfRelevant:false, tfAmount:"",            tfCurrency:"EUR", tfPaid:false, tfDeadline:"",          tfPayType:"",
                   emdRelevant:true,  emdAmount:"25,000.00",  emdCurrency:"EUR", emdPaid:false, emdDeadline:"20.09.2026", emdPayType:"Online",
                   allowViewDetails:true },
-
                 { id:5, spNo:"SP-2026-0041", title:"Green Energy Solutions Procurement",
                   spType:"RFI", publishDate:"10.08.2026", submDeadline:"30.09.2026", status:"Closed",
                   tfRelevant:false, tfAmount:"",            tfCurrency:"EUR", tfPaid:false, tfDeadline:"",          tfPayType:"",
                   emdRelevant:false, emdAmount:"",           emdCurrency:"EUR", emdPaid:false, emdDeadline:"",          emdPayType:"",
                   allowViewDetails:true },
-
                 { id:6, spNo:"SP-2026-0040", title:"Smart City Digital Infrastructure",
                   spType:"RFP", publishDate:"05.08.2026", submDeadline:"01.11.2026", status:"Published",
                   tfRelevant:true,  tfAmount:"20,000.00",   tfCurrency:"EUR", tfPaid:false, tfDeadline:"20.09.2026", tfPayType:"Online",
@@ -116,27 +111,38 @@
             function paidText(b)  { return b ? "Paid" : "Not Paid"; }
             function paidIcon(b)  { return b ? "sap-icon://accept" : "sap-icon://decline"; }
 
+            function rowHighlight(o) {
+                var bBlocked  = o.tfRelevant && !o.tfPaid && !o.allowViewDetails;
+                var bPending  = (o.tfRelevant && !o.tfPaid) || (o.emdRelevant && !o.emdPaid);
+                if (bBlocked) { return "Error"; }
+                if (bPending) { return "Warning"; }
+                return "None";
+            }
+
             /* ═══════════════════════════════════════
                PAYMENT DIALOG
                ═══════════════════════════════════════ */
             var oPayItem = null;
             var sPayKind = null;
 
-            var oPaySP       = new Text({ wrapping:false });
-            var oPayKindText = new Text();
-            var oPayAmount   = new Text();
-            var oPayDeadline = new Text();
-            var oPayMethod   = new Select({ width:"100%", items:[
+            /* FIX #7: IDs on Text controls so labelFor on Labels can reference them */
+            var oPaySP       = new Text("idPaySP",       { wrapping:false });
+            var oPayKindText = new Text("idPayKindText");
+            var oPayAmount   = new Text("idPayAmount");
+            var oPayDeadline = new Text("idPayDeadline");
+            var oPayMethod   = new Select("idPayMethod", { width:"100%", items:[
                 new Item({ key:"NEFT", text:"NEFT – Net Banking / Internet Banking" }),
                 new Item({ key:"RTGS", text:"RTGS – Real Time Gross Settlement" }),
                 new Item({ key:"IMPS", text:"IMPS – Immediate Payment Service" }),
                 new Item({ key:"CARD", text:"CARD – Credit / Debit Card" })
             ]});
 
-            function row(sLabel, oControl) {
-                return new HBox({ renderType:"Bare", alignItems:"Center",
-                    items:[ new Label({ text:sLabel, design:"Bold", width:"11rem" }), oControl ]
-                }).addStyleClass("sapUiTinyMarginBottom");
+            /* FIX #7: labelFor added to each dialog label */
+            function dlgRow(sLabel, sFor, oCtrl) {
+                return new HBox({ renderType:"Bare", alignItems:"Center", items:[
+                    new Label({ text:sLabel, design:"Bold", width:"11rem", labelFor:sFor }),
+                    oCtrl
+                ]}).addStyleClass("sapUiTinyMarginBottom");
             }
 
             var oPayDialog = new Dialog({
@@ -148,16 +154,23 @@
                         type:"Information", showIcon:true
                     }).addStyleClass("sapUiSmallMarginTopSmall sapUiSmallMarginBottom"),
                     new VBox({ items:[
-                        row("Sourcing Project:", oPaySP),
-                        row("Payment Type:",     oPayKindText),
-                        row("Amount Due:",       oPayAmount),
-                        row("Payment Deadline:", oPayDeadline),
-                        new Label({ text:"Payment Method:", design:"Bold" }).addStyleClass("sapUiTinyMarginBottom"),
+                        dlgRow("Sourcing Project:", "idPaySP",       oPaySP),
+                        dlgRow("Payment Type:",     "idPayKindText",  oPayKindText),
+                        dlgRow("Amount Due:",       "idPayAmount",    oPayAmount),
+                        dlgRow("Payment Deadline:", "idPayDeadline",  oPayDeadline),
+                        new Label({ text:"Payment Method:", design:"Bold", labelFor:"idPayMethod" })
+                            .addStyleClass("sapUiTinyMarginBottom"),
                         oPayMethod
                     ]}).addStyleClass("sapUiSmallMarginBeginEnd")
                 ],
+                /* FIX #1: beginButton = secondary (Cancel), endButton = primary (Proceed) */
                 beginButton: new Button({
-                    text:"Proceed to Payment Gateway", type:"Emphasized",
+                    text:"Cancel",
+                    press: function () { oPayDialog.close(); }
+                }),
+                endButton: new Button({
+                    text:"Proceed to Payment Gateway",
+                    type:"Emphasized",
                     press: function () {
                         MessageToast.show("BADI executing – generating payment gateway URL…");
                         setTimeout(function () {
@@ -173,8 +186,7 @@
                             oPayDialog.close();
                         }, 2500);
                     }
-                }),
-                endButton: new Button({ text:"Cancel", press: function () { oPayDialog.close(); } })
+                })
             });
 
             function openPayDialog(oItem, sKind) {
@@ -190,61 +202,57 @@
             }
 
             /* ═══════════════════════════════════════
-               SHELL BAR  (sap.f.ShellBar)
+               SHELL BAR
                ═══════════════════════════════════════ */
             var oShellBar = new ShellBar({
-                title:       "Manage Sourcing Projects",
-                secondTitle: "Procurement for Public Sector",
+                title:          "Manage Sourcing Projects",
+                secondTitle:    "Procurement for Public Sector",
                 showMenuButton: false,
-                avatar: new Avatar({
-                    initials:     "BS",
-                    displayShape: "Circle",
-                    tooltip:      "Bozena Sudova"
-                })
+                avatar: new Avatar({ initials:"BS", displayShape:"Circle", tooltip:"Bozena Sudova" })
             });
 
             /* ═══════════════════════════════════════
-               FILTER BAR  (inside DynamicPageHeader)
+               FILTER BAR
+               FIX #3: IDs on controls + labelFor on Labels
                ═══════════════════════════════════════ */
-            var oSPInput     = new Input({ placeholder:"SP number or title…" });
-            var oTypeSelect  = new Select({ items:[
+            var oSPInput     = new Input("idFilterSP",       { placeholder:"SP number or title…" });
+            var oTypeSelect  = new Select("idFilterType",    { items:[
                 new Item({key:"",    text:"All Types"}),
                 new Item({key:"RFQ", text:"RFQ – Request for Quotation"}),
                 new Item({key:"RFP", text:"RFP – Request for Proposal"}),
                 new Item({key:"RFI", text:"RFI – Request for Information"})
             ]});
-            var oStatSelect  = new Select({ items:[
+            var oStatSelect  = new Select("idFilterStatus",  { items:[
                 new Item({key:"",          text:"All Statuses"}),
                 new Item({key:"Published", text:"Published"}),
                 new Item({key:"Closed",    text:"Closed"}),
                 new Item({key:"Awarded",   text:"Awarded"}),
                 new Item({key:"Cancelled", text:"Cancelled"})
             ]});
-            var oDateRange     = new DateRangeSelection({ displayFormat:"dd.MM.yyyy" });
-            var oTFRelSelect   = new Select({ items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes"}), new Item({key:"false",text:"No"}) ]});
-            var oTFPaidSelect  = new Select({ items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes – Paid"}), new Item({key:"false",text:"No – Not Paid"}) ]});
-            var oEMDRelSelect  = new Select({ items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes"}), new Item({key:"false",text:"No"}) ]});
-            var oEMDPaidSelect = new Select({ items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes – Paid"}), new Item({key:"false",text:"No – Not Paid"}) ]});
+            var oDateRange     = new DateRangeSelection("idFilterDeadline", { displayFormat:"dd.MM.yyyy" });
+            var oTFRelSelect   = new Select("idFilterTFRel",  { items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes"}), new Item({key:"false",text:"No"}) ]});
+            var oTFPaidSelect  = new Select("idFilterTFPaid", { items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes – Paid"}), new Item({key:"false",text:"No – Not Paid"}) ]});
+            var oEMDRelSelect  = new Select("idFilterEMDRel", { items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes"}), new Item({key:"false",text:"No"}) ]});
+            var oEMDPaidSelect = new Select("idFilterEMDPaid",{ items:[ new Item({key:"",text:"All"}), new Item({key:"true",text:"Yes – Paid"}), new Item({key:"false",text:"No – Not Paid"}) ]});
 
-            /* filter field helper */
-            function filterField(sLabel, oCtrl) {
-                return new VBox({ items:[ new Label({ text:sLabel, wrapping:false }), oCtrl ] })
-                    .addStyleClass("sapUiSmallMarginBottom");
+            function filterField(sLabel, sFor, oCtrl) {
+                return new VBox({ items:[
+                    new Label({ text:sLabel, wrapping:false, labelFor:sFor }),
+                    oCtrl
+                ]}).addStyleClass("sapUiSmallMarginBottom");
             }
 
-            var oFilterGrid = new Grid({ defaultSpan:"L3 M6 S12", containerQuery:true, content:[
-                filterField("Sourcing Project No. / Title", oSPInput),
-                filterField("SP Type",                      oTypeSelect),
-                filterField("Status",                       oStatSelect),
-                filterField("Submission Deadline",          oDateRange),
-                filterField("Tender Fee Relevant",          oTFRelSelect),
-                filterField("Tender Fee Paid",              oTFPaidSelect),
-                filterField("EMD Relevant",                 oEMDRelSelect),
-                filterField("EMD Paid",                     oEMDPaidSelect)
-            ]});
-
             var oFilterBar = new VBox({ items:[
-                oFilterGrid,
+                new Grid({ defaultSpan:"L3 M6 S12", containerQuery:true, content:[
+                    filterField("Sourcing Project No. / Title", "idFilterSP",       oSPInput),
+                    filterField("SP Type",                       "idFilterType",     oTypeSelect),
+                    filterField("Status",                        "idFilterStatus",   oStatSelect),
+                    filterField("Submission Deadline",           "idFilterDeadline", oDateRange),
+                    filterField("Tender Fee Relevant",           "idFilterTFRel",    oTFRelSelect),
+                    filterField("Tender Fee Paid",               "idFilterTFPaid",   oTFPaidSelect),
+                    filterField("EMD Relevant",                  "idFilterEMDRel",   oEMDRelSelect),
+                    filterField("EMD Paid",                      "idFilterEMDPaid",  oEMDPaidSelect)
+                ]}),
                 new OverflowToolbar({ content:[
                     new ToolbarSpacer(),
                     new Button({ text:"Restore", press: resetFilters }),
@@ -253,56 +261,53 @@
             ]});
 
             /* ═══════════════════════════════════════
-               TABLE  (sap.m.Table – Responsive Table)
+               TABLE
                ═══════════════════════════════════════ */
-            var oCountText  = new Text({ text:"(0)" }).addStyleClass("sapUiSmallMarginBegin");
-            var bPPSMode    = true;
-            var aPPSCols    = [];
+            /* FIX #5: Title holds the count — no separate Text control */
+            var oTableTitle = new Title({ text:"Sourcing Projects (0)", level:"H4" });
+
+            var bPPSMode  = true;
+            var aPPSCols  = [];
             var oActionsCol = new Column({ header: new Label({ text:"Actions" }), width:"13rem" });
 
             function col(sLabel, sWidth, bPPS, bEndAlign, bPopin) {
                 var oCol = new Column({
-                    header:         new Label({ text: sLabel }),
+                    header:         new Label({ text:sLabel }),
                     width:          sWidth,
                     hAlign:         bEndAlign ? "End" : "Begin",
                     minScreenWidth: bPopin    ? "Desktop" : undefined,
-                    demandPopin:    bPopin    ? true : false
+                    demandPopin:    !!bPopin
                 });
                 if (bPPS) { aPPSCols.push(oCol); }
                 return oCol;
             }
 
-            /* Live search in table results */
+            /* FIX #4: SearchField handles both liveChange AND search (Enter key) */
             var oTableSearch = new SearchField({
-                width:"16rem",
-                placeholder:"Search in results…",
-                liveChange: function (oEvent) {
-                    var sVal = oEvent.getParameter("newValue").toLowerCase();
-                    var aFiltered = aFilteredData.filter(function (o) {
-                        return !sVal
-                            || o.spNo.toLowerCase().indexOf(sVal) > -1
-                            || o.title.toLowerCase().indexOf(sVal) > -1
-                            || o.vendorName && o.vendorName.toLowerCase().indexOf(sVal) > -1;
-                    });
-                    buildRows(aFiltered, true);
-                }
+                width:"16rem", placeholder:"Search in results…",
+                liveChange: function (oEvent) { doTableSearch(oEvent.getParameter("newValue")); },
+                search:     function (oEvent) { doTableSearch(oEvent.getParameter("query")); }
             });
 
+            /* FIX #6: IllustratedMessage for meaningful empty state
+               FIX #8: mode explicitly declared as "None"              */
             var oTable = new Table({
-                growing:true, growingThreshold:10,
-                alternateRowColors:true,
-                sticky:["ColumnHeaders","HeaderToolbar"],
-                noDataText:"No sourcing projects found. Adjust your filters and try again.",
+                mode:               "None",
+                growing:            true,
+                growingThreshold:   10,
+                alternateRowColors: true,
+                sticky:             ["ColumnHeaders","HeaderToolbar"],
+                noData: new IllustratedMessage({
+                    title:       "No Sourcing Projects Found",
+                    description: "Adjust your search criteria or filter settings, then choose Go."
+                }),
                 headerToolbar: new OverflowToolbar({ content:[
-                    new Title({ text:"Sourcing Projects", level:"H4" }),
-                    oCountText,
+                    oTableTitle,
                     new ToolbarSeparator(),
                     oTableSearch,
                     new ToolbarSpacer(),
-                    /* PPS Mode – simulates Public Sector technical flag */
                     new ToggleButton({
-                        text:"PPS: ON", pressed:true,
-                        icon:"sap-icon://official-service",
+                        text:"PPS: ON", pressed:true, icon:"sap-icon://official-service",
                         tooltip:"Toggle Public Sector columns (simulates technical flag)",
                         press: function (oEvent) {
                             bPPSMode = oEvent.getSource().getPressed();
@@ -323,16 +328,14 @@
                     col("Published",           "8rem",  false, false, true),
                     col("Submission Deadline", "10rem", false),
                     col("Status",              "9rem",  false),
-                    /* ── PPS: Tender Fee columns ── */
-                    col("TF Relevant",  "7rem",  true,  false, true),
-                    col("TF Amount",    "9rem",  true,  true,  true),
-                    col("TF Paid",      "7rem",  true),
-                    col("TF Deadline",  "9rem",  true,  false, true),
-                    /* ── PPS: EMD columns ── */
-                    col("EMD Relevant", "8rem",  true,  false, true),
-                    col("EMD Amount",   "9rem",  true,  true,  true),
-                    col("EMD Paid",     "8rem",  true),
-                    col("EMD Deadline", "9rem",  true,  false, true),
+                    col("TF Relevant",         "7rem",  true,  false, true),
+                    col("TF Amount",           "9rem",  true,  true,  true),
+                    col("TF Paid",             "7rem",  true),
+                    col("TF Deadline",         "9rem",  true,  false, true),
+                    col("EMD Relevant",        "8rem",  true,  false, true),
+                    col("EMD Amount",          "9rem",  true,  true,  true),
+                    col("EMD Paid",            "8rem",  true),
+                    col("EMD Deadline",        "9rem",  true,  false, true),
                     oActionsCol
                 ]
             });
@@ -342,6 +345,7 @@
                ═══════════════════════════════════════ */
             function buildRows(aData, bSkipCount) {
                 oTable.removeAllItems();
+
                 aData.forEach(function (o) {
                     var bBlocked = o.tfRelevant && !o.tfPaid && !o.allowViewDetails;
 
@@ -349,7 +353,7 @@
                     if (o.tfRelevant  && !o.tfPaid  && o.tfPayType  === "Online") {
                         aButtons.push(new Button({
                             text:"Pay TF", type:"Emphasized",
-                            press:(function (i) { return function () { openPayDialog(i, "TF"); }; })(o)
+                            press:(function (i) { return function () { openPayDialog(i, "TF");  }; })(o)
                         }).addStyleClass("sapUiTinyMarginEnd"));
                     }
                     if (o.emdRelevant && !o.emdPaid && o.emdPayType === "Online") {
@@ -360,7 +364,8 @@
                     }
 
                     oTable.addItem(new ColumnListItem({
-                        type: bBlocked ? "Active" : "Navigation",
+                        type:      bBlocked ? "Active" : "Navigation",
+                        highlight: rowHighlight(o),
                         press:(function (item, blocked) {
                             return function () {
                                 if (blocked) {
@@ -380,50 +385,45 @@
                             };
                         })(o, bBlocked),
                         cells:[
-                            /* SP Number */
                             bBlocked
                                 ? new ObjectStatus({ text:o.spNo, icon:"sap-icon://private", state:"Error" })
                                 : new Link({ text:o.spNo, press: function () { MessageToast.show("Open " + o.spNo); } }),
-                            /* Title */
                             new Text({ text:o.title, wrapping:false }),
-                            /* Type */
                             new Text({ text:o.spType }),
-                            /* Published */
                             new Text({ text:o.publishDate }),
-                            /* Submission Deadline */
                             new Text({ text:o.submDeadline }),
-                            /* Status */
                             new ObjectStatus({ text:o.status, state:statusState(o.status) }),
-                            /* TF Relevant */
                             new ObjectStatus({ text:o.tfRelevant?"Yes":"No",
                                 state:o.tfRelevant?"Success":"None",
                                 icon:o.tfRelevant?"sap-icon://accept":"sap-icon://decline" }),
-                            /* TF Amount */
                             new Text({ text: o.tfRelevant ? o.tfAmount + " " + o.tfCurrency : "–" }),
-                            /* TF Paid */
                             o.tfRelevant
                                 ? new ObjectStatus({ text:paidText(o.tfPaid), state:paidState(o.tfPaid), icon:paidIcon(o.tfPaid) })
                                 : new Text({ text:"N/A" }),
-                            /* TF Deadline */
-                            new Text({ text: o.tfDeadline || "–" }),
-                            /* EMD Relevant */
+                            new Text({ text: o.tfDeadline  || "–" }),
                             new ObjectStatus({ text:o.emdRelevant?"Yes":"No",
                                 state:o.emdRelevant?"Success":"None",
                                 icon:o.emdRelevant?"sap-icon://accept":"sap-icon://decline" }),
-                            /* EMD Amount */
                             new Text({ text: o.emdRelevant ? o.emdAmount + " " + o.emdCurrency : "–" }),
-                            /* EMD Paid */
                             o.emdRelevant
                                 ? new ObjectStatus({ text:paidText(o.emdPaid), state:paidState(o.emdPaid), icon:paidIcon(o.emdPaid) })
                                 : new Text({ text:"N/A" }),
-                            /* EMD Deadline */
                             new Text({ text: o.emdDeadline || "–" }),
-                            /* Actions */
                             new HBox({ items: aButtons.length ? aButtons : [new Text({ text:"–" })] })
                         ]
                     }));
                 });
-                if (!bSkipCount) { oCountText.setText("(" + aData.length + ")"); }
+
+                if (!bSkipCount) { oTableTitle.setText("Sourcing Projects (" + aData.length + ")"); }
+            }
+
+            function doTableSearch(sVal) {
+                var sTerm = (sVal || "").toLowerCase();
+                buildRows(aFilteredData.filter(function (o) {
+                    return !sTerm
+                        || o.spNo.toLowerCase().indexOf(sTerm)  > -1
+                        || o.title.toLowerCase().indexOf(sTerm) > -1;
+                }), true);
             }
 
             /* ═══════════════════════════════════════
@@ -472,36 +472,31 @@
             buildRows(aAllData);
 
             /* ═══════════════════════════════════════
-               DYNAMIC PAGE  (Fiori List Report floorplan)
+               DYNAMIC PAGE
                ═══════════════════════════════════════ */
             var oDynPage = new DynamicPage({
                 fitContent: true,
                 title: new DynamicPageTitle({
-                    heading: new Title({ text:"Manage Sourcing Projects", level:"H2", wrapping:true }),
+                    heading:        new Title({ text:"Manage Sourcing Projects", level:"H2", wrapping:true }),
                     snappedHeading: new Title({ text:"Manage Sourcing Projects" }),
                     actions:[
-                        new Button({
-                            text:"Adapt Filters", icon:"sap-icon://filter",
-                            press: function () {
-                                oDynPage.setHeaderExpanded(!oDynPage.getHeaderExpanded());
-                            }
+                        new Button({ text:"Adapt Filters", icon:"sap-icon://filter",
+                            press: function () { oDynPage.setHeaderExpanded(!oDynPage.getHeaderExpanded()); }
                         }),
                         new ToolbarSeparator(),
                         new Button({ icon:"sap-icon://share-2", tooltip:"Share",
                             press: function () { MessageToast.show("Share link copied."); } }),
-                        new Button({ icon:"sap-icon://refresh", tooltip:"Refresh",
+                        new Button({ icon:"sap-icon://refresh",  tooltip:"Refresh",
                             press: function () { buildRows(aFilteredData); MessageToast.show("List refreshed."); } })
                     ]
                 }),
-                header: new DynamicPageHeader({
-                    pinnable: true,
-                    content:[ oFilterBar ]
-                }),
+                header: new DynamicPageHeader({ pinnable:true, content:[ oFilterBar ] }),
                 content: new VBox({ items:[
                     new MessageStrip({
                         text:"TF = Tender Fee  |  EMD = Earnest Money Deposit (Bid Bond)  " +
-                             "|  Locked rows ( 🔒 ) are restricted until the Tender Fee is paid.  " +
-                             "|  Toggle 'PPS: ON/OFF' in the table toolbar to show or hide Public Sector columns.",
+                             "|  Red rows are access-restricted until Tender Fee is paid.  " +
+                             "|  Yellow rows have a pending payment.  " +
+                             "|  Toggle 'PPS: ON/OFF' to show or hide Public Sector columns.",
                         type:"Information", showIcon:true, showCloseButton:true
                     }).addStyleClass("sapUiSmallMarginBottom"),
                     oTable
@@ -509,12 +504,12 @@
             });
 
             /* ═══════════════════════════════════════
-               APP  –  ShellBar + DynamicPage
+               APP
                ═══════════════════════════════════════ */
             new App({ pages:[
                 new Page({
-                    showHeader: false,
-                    customHeader: oShellBar,
+                    showHeader:      false,
+                    customHeader:    oShellBar,
                     enableScrolling: false,
                     content:[ oDynPage ]
                 })
