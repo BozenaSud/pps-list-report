@@ -28,6 +28,7 @@
             "sap/m/Text",
             "sap/m/Label",
             "sap/m/Link",
+            "sap/m/Breadcrumbs",
             "sap/m/Button",
             "sap/m/ToggleButton",
             "sap/m/OverflowToolbar",
@@ -52,7 +53,8 @@
         ], function (
             App, Page, ShellBar, Avatar, SearchField,
             DynamicPage, DynamicPageTitle, DynamicPageHeader,
-            Title, Text, Label, Link, Button, ToggleButton,
+            Title, Text, Label, Link, Breadcrumbs,
+            Button, ToggleButton,
             OverflowToolbar, ToolbarSpacer, ToolbarSeparator,
             Input, Select, Item, DateRangeSelection,
             Table, Column, ColumnListItem,
@@ -62,9 +64,9 @@
             Grid
         ) {
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                DATA
-               ═══════════════════════════════════════ */
+               ═══════════════════════════════════════════════════ */
             var aAllData = [
                 { id:1, spNo:"SP-2026-0045", title:"Supply of Office Equipment – FY 2026",
                   spType:"RFQ", publishDate:"01.09.2026", submDeadline:"15.10.2026", status:"Published",
@@ -99,9 +101,9 @@
             ];
             var aFilteredData = aAllData.slice();
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                HELPERS
-               ═══════════════════════════════════════ */
+               ═══════════════════════════════════════════════════ */
             function statusState(s) {
                 return s === "Published" ? "Information"
                      : s === "Awarded"   ? "Success"
@@ -112,20 +114,19 @@
             function paidIcon(b)  { return b ? "sap-icon://accept" : "sap-icon://decline"; }
 
             function rowHighlight(o) {
-                var bBlocked  = o.tfRelevant && !o.tfPaid && !o.allowViewDetails;
-                var bPending  = (o.tfRelevant && !o.tfPaid) || (o.emdRelevant && !o.emdPaid);
+                var bBlocked = o.tfRelevant && !o.tfPaid && !o.allowViewDetails;
+                var bPending = (o.tfRelevant && !o.tfPaid) || (o.emdRelevant && !o.emdPaid);
                 if (bBlocked) { return "Error"; }
                 if (bPending) { return "Warning"; }
                 return "None";
             }
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                PAYMENT DIALOG
-               ═══════════════════════════════════════ */
+               ═══════════════════════════════════════════════════ */
             var oPayItem = null;
             var sPayKind = null;
 
-            /* FIX #7: IDs on Text controls so labelFor on Labels can reference them */
             var oPaySP       = new Text("idPaySP",       { wrapping:false });
             var oPayKindText = new Text("idPayKindText");
             var oPayAmount   = new Text("idPayAmount");
@@ -137,7 +138,6 @@
                 new Item({ key:"CARD", text:"CARD – Credit / Debit Card" })
             ]});
 
-            /* FIX #7: labelFor added to each dialog label */
             function dlgRow(sLabel, sFor, oCtrl) {
                 return new HBox({ renderType:"Bare", alignItems:"Center", items:[
                     new Label({ text:sLabel, design:"Bold", width:"11rem", labelFor:sFor }),
@@ -163,7 +163,6 @@
                         oPayMethod
                     ]}).addStyleClass("sapUiSmallMarginBeginEnd")
                 ],
-                /* FIX #1: beginButton = secondary (Cancel), endButton = primary (Proceed) */
                 beginButton: new Button({
                     text:"Cancel",
                     press: function () { oPayDialog.close(); }
@@ -201,28 +200,29 @@
                 oPayDialog.open();
             }
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                SHELL BAR
-               ═══════════════════════════════════════ */
+               Fiori guideline: ShellBar title = application name,
+               not the current page title.
+               ═══════════════════════════════════════════════════ */
             var oShellBar = new ShellBar({
-                title:          "Manage Sourcing Projects",
+                title:          "SAP S/4HANA",
                 secondTitle:    "Procurement for Public Sector",
                 showMenuButton: false,
                 avatar: new Avatar({ initials:"BS", displayShape:"Circle", tooltip:"Bozena Sudova" })
             });
 
-            /* ═══════════════════════════════════════
-               FILTER BAR
-               FIX #3: IDs on controls + labelFor on Labels
-               ═══════════════════════════════════════ */
-            var oSPInput     = new Input("idFilterSP",       { placeholder:"SP number or title…" });
-            var oTypeSelect  = new Select("idFilterType",    { items:[
+            /* ═══════════════════════════════════════════════════
+               FILTER CONTROLS
+               ═══════════════════════════════════════════════════ */
+            var oSPInput     = new Input("idFilterSP",        { placeholder:"SP number or title…" });
+            var oTypeSelect  = new Select("idFilterType",     { items:[
                 new Item({key:"",    text:"All Types"}),
                 new Item({key:"RFQ", text:"RFQ – Request for Quotation"}),
                 new Item({key:"RFP", text:"RFP – Request for Proposal"}),
                 new Item({key:"RFI", text:"RFI – Request for Information"})
             ]});
-            var oStatSelect  = new Select("idFilterStatus",  { items:[
+            var oStatSelect  = new Select("idFilterStatus",   { items:[
                 new Item({key:"",          text:"All Statuses"}),
                 new Item({key:"Published", text:"Published"}),
                 new Item({key:"Closed",    text:"Closed"}),
@@ -245,13 +245,13 @@
             var oFilterBar = new VBox({ items:[
                 new Grid({ defaultSpan:"L3 M6 S12", containerQuery:true, content:[
                     filterField("Sourcing Project No. / Title", "idFilterSP",       oSPInput),
-                    filterField("SP Type",                       "idFilterType",     oTypeSelect),
-                    filterField("Status",                        "idFilterStatus",   oStatSelect),
-                    filterField("Submission Deadline",           "idFilterDeadline", oDateRange),
-                    filterField("Tender Fee Relevant",           "idFilterTFRel",    oTFRelSelect),
-                    filterField("Tender Fee Paid",               "idFilterTFPaid",   oTFPaidSelect),
-                    filterField("EMD Relevant",                  "idFilterEMDRel",   oEMDRelSelect),
-                    filterField("EMD Paid",                      "idFilterEMDPaid",  oEMDPaidSelect)
+                    filterField("SP Type",                      "idFilterType",      oTypeSelect),
+                    filterField("Status",                       "idFilterStatus",    oStatSelect),
+                    filterField("Submission Deadline",          "idFilterDeadline",  oDateRange),
+                    filterField("Tender Fee Relevant",          "idFilterTFRel",     oTFRelSelect),
+                    filterField("Tender Fee Paid",              "idFilterTFPaid",    oTFPaidSelect),
+                    filterField("EMD Relevant",                 "idFilterEMDRel",    oEMDRelSelect),
+                    filterField("EMD Paid",                     "idFilterEMDPaid",   oEMDPaidSelect)
                 ]}),
                 new OverflowToolbar({ content:[
                     new ToolbarSpacer(),
@@ -260,15 +260,15 @@
                 ]})
             ]});
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                TABLE
-               ═══════════════════════════════════════ */
-            /* FIX #5: Title holds the count — no separate Text control */
+               ═══════════════════════════════════════════════════ */
             var oTableTitle = new Title({ text:"Sourcing Projects (0)", level:"H4" });
 
-            var bPPSMode  = true;
-            var aPPSCols  = [];
-            var oActionsCol = new Column({ header: new Label({ text:"Actions" }), width:"13rem" });
+            var bPPSMode    = true;
+            var aPPSCols    = [];
+            /* Fiori guideline: inline action column has no header label */
+            var oActionsCol = new Column({ header: new Text(), width:"13rem" });
 
             function col(sLabel, sWidth, bPPS, bEndAlign, bPopin) {
                 var oCol = new Column({
@@ -282,15 +282,12 @@
                 return oCol;
             }
 
-            /* FIX #4: SearchField handles both liveChange AND search (Enter key) */
             var oTableSearch = new SearchField({
                 width:"16rem", placeholder:"Search in results…",
                 liveChange: function (oEvent) { doTableSearch(oEvent.getParameter("newValue")); },
                 search:     function (oEvent) { doTableSearch(oEvent.getParameter("query")); }
             });
 
-            /* FIX #6: IllustratedMessage for meaningful empty state
-               FIX #8: mode explicitly declared as "None"              */
             var oTable = new Table({
                 mode:               "None",
                 growing:            true,
@@ -316,9 +313,10 @@
                         }
                     }),
                     new ToolbarSeparator(),
-                    new Button({ icon:"sap-icon://excel-attachment", tooltip:"Export to Spreadsheet",
+                    /* Fiori guideline: icon-only toolbar buttons use Transparent type */
+                    new Button({ icon:"sap-icon://excel-attachment", type:"Transparent", tooltip:"Export to Spreadsheet",
                         press: function () { MessageToast.show("Exporting to spreadsheet…"); } }),
-                    new Button({ icon:"sap-icon://action-settings",  tooltip:"Column Settings",
+                    new Button({ icon:"sap-icon://action-settings",  type:"Transparent", tooltip:"Column Settings",
                         press: function () { MessageToast.show("Column settings"); } })
                 ]}),
                 columns:[
@@ -340,9 +338,9 @@
                 ]
             });
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                BUILD ROWS
-               ═══════════════════════════════════════ */
+               ═══════════════════════════════════════════════════ */
             function buildRows(aData, bSkipCount) {
                 oTable.removeAllItems();
 
@@ -426,9 +424,32 @@
                 }), true);
             }
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                FILTER LOGIC
-               ═══════════════════════════════════════ */
+               ═══════════════════════════════════════════════════ */
+            function countActiveFilters() {
+                var n = 0;
+                if (oSPInput.getValue().trim())    n++;
+                if (oTypeSelect.getSelectedKey())  n++;
+                if (oStatSelect.getSelectedKey())  n++;
+                if (oDateRange.getDateValue())     n++;
+                if (oTFRelSelect.getSelectedKey()) n++;
+                if (oTFPaidSelect.getSelectedKey())n++;
+                if (oEMDRelSelect.getSelectedKey())n++;
+                if (oEMDPaidSelect.getSelectedKey())n++;
+                return n;
+            }
+
+            /* Fiori guideline: "Filters" button shows count of active filters;
+               snappedContent summarises active filters when the header collapses. */
+            function updateFilterUI() {
+                var n = countActiveFilters();
+                oFiltersBtn.setText(n > 0 ? "Filters (" + n + ")" : "Filters");
+                oSnappedFilterSummary.setText(
+                    n > 0 ? n + " filter" + (n > 1 ? "s" : "") + " active" : "No filters active"
+                );
+            }
+
             function applyFilters() {
                 var sSP   = oSPInput.getValue().trim().toLowerCase();
                 var sType = oTypeSelect.getSelectedKey();
@@ -439,18 +460,19 @@
                 var sEMDP = oEMDPaidSelect.getSelectedKey();
 
                 aFilteredData = aAllData.filter(function (o) {
-                    if (sSP   && o.spNo.toLowerCase().indexOf(sSP) === -1
-                              && o.title.toLowerCase().indexOf(sSP) === -1) return false;
-                    if (sType && o.spType !== sType)                        return false;
-                    if (sStat && o.status !== sStat)                        return false;
-                    if (sTFR  && String(o.tfRelevant)  !== sTFR)            return false;
-                    if (sTFP  && String(o.tfPaid)      !== sTFP)            return false;
-                    if (sEMDR && String(o.emdRelevant) !== sEMDR)           return false;
-                    if (sEMDP && String(o.emdPaid)     !== sEMDP)           return false;
+                    if (sSP   && o.spNo.toLowerCase().indexOf(sSP)    === -1
+                              && o.title.toLowerCase().indexOf(sSP)   === -1) return false;
+                    if (sType && o.spType  !== sType)                          return false;
+                    if (sStat && o.status  !== sStat)                          return false;
+                    if (sTFR  && String(o.tfRelevant)   !== sTFR)              return false;
+                    if (sTFP  && String(o.tfPaid)       !== sTFP)              return false;
+                    if (sEMDR && String(o.emdRelevant)  !== sEMDR)             return false;
+                    if (sEMDP && String(o.emdPaid)      !== sEMDP)             return false;
                     return true;
                 });
                 oTableSearch.setValue("");
                 buildRows(aFilteredData);
+                updateFilterUI();
                 MessageToast.show(aFilteredData.length + " sourcing project(s) found.");
             }
 
@@ -467,22 +489,43 @@
                 oTableSearch.setValue("");
                 aFilteredData = aAllData.slice();
                 buildRows(aFilteredData);
+                updateFilterUI();
             }
 
             buildRows(aAllData);
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                DYNAMIC PAGE
-               ═══════════════════════════════════════ */
+               Fiori List Report floorplan (DynamicPage):
+               – breadcrumbs in DynamicPageTitle (navigation context)
+               – snappedContent shows active filter summary on collapse
+               – oFiltersBtn text reflects active filter count
+               – page-level actions (Filters, Share, Refresh) on right
+               ═══════════════════════════════════════════════════ */
+
+            /* Extracted variables needed by updateFilterUI() */
+            var oFiltersBtn = new Button({
+                text:"Filters", icon:"sap-icon://filter",
+                press: function () { oDynPage.setHeaderExpanded(!oDynPage.getHeaderExpanded()); }
+            });
+
+            /* Shown in snappedContent when the filter bar header is collapsed */
+            var oSnappedFilterSummary = new Text({ text:"No filters active" });
+
             var oDynPage = new DynamicPage({
                 fitContent: true,
                 title: new DynamicPageTitle({
+                    /* Fiori guideline: breadcrumbs show navigation context above the heading */
+                    breadcrumbs: new Breadcrumbs({
+                        links:[ new Link({ text:"Home" }), new Link({ text:"Sourcing" }) ],
+                        currentLocationText:"Manage Sourcing Projects"
+                    }),
                     heading:        new Title({ text:"Manage Sourcing Projects", level:"H2", wrapping:true }),
                     snappedHeading: new Title({ text:"Manage Sourcing Projects" }),
+                    /* Fiori guideline: snappedContent reveals filter summary when header collapses */
+                    snappedContent:[ oSnappedFilterSummary ],
                     actions:[
-                        new Button({ text:"Adapt Filters", icon:"sap-icon://filter",
-                            press: function () { oDynPage.setHeaderExpanded(!oDynPage.getHeaderExpanded()); }
-                        }),
+                        oFiltersBtn,
                         new ToolbarSeparator(),
                         new Button({ icon:"sap-icon://share-2", tooltip:"Share",
                             press: function () { MessageToast.show("Share link copied."); } }),
@@ -503,9 +546,9 @@
                 ]}).addStyleClass("sapUiSmallMarginBeginEnd sapUiSmallMarginBottom")
             });
 
-            /* ═══════════════════════════════════════
+            /* ═══════════════════════════════════════════════════
                APP
-               ═══════════════════════════════════════ */
+               ═══════════════════════════════════════════════════ */
             new App({ pages:[
                 new Page({
                     showHeader:      false,
