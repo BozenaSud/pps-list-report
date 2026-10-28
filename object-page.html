@@ -4,6 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PPS – Tender Fee and EMD – Object Page</title>
+    <style>
+        /* Form container – white card with rounded corners per Figma node 1:22780 */
+        .ppsFormCard {
+            background: var(--sapGroup_ContentBackground, #fff);
+            border-radius: 0.75rem;  /* 12px */
+            padding: 1rem;           /* 16px */
+        }
+        /* Spacer to align col-2 / col-4 fields with col-1 / col-3 that have group headers */
+        .ppsGroupSpacer {
+            height: 1.875rem;        /* ~H6 title row height */
+            display: block;
+        }
+    </style>
     <script id="sap-ui-bootstrap"
         src="https://ui5.sap.com/resources/sap-ui-core.js"
         data-sap-ui-theme="sap_horizon"
@@ -28,21 +41,16 @@
             "sap/m/Button",
             "sap/m/OverflowToolbar",
             "sap/m/ToolbarSpacer",
-            "sap/m/ToolbarSeparator",
             "sap/m/SearchField",
             "sap/m/Table",
             "sap/m/Column",
             "sap/m/ColumnListItem",
-            "sap/m/ObjectStatus",
             "sap/m/ObjectAttribute",
             "sap/m/MessageToast",
             "sap/m/MessageBox",
             "sap/m/VBox",
-            "sap/m/HBox",
             "sap/m/Dialog",
             "sap/m/Input",
-            "sap/m/Select",
-            "sap/ui/core/Item",
             "sap/ui/layout/Grid",
             "sap/uxap/ObjectPageLayout",
             "sap/uxap/ObjectPageHeader",
@@ -52,26 +60,26 @@
             App, Page, ShellBar, Avatar,
             Title, Text, Label, Link, Breadcrumbs,
             Button,
-            OverflowToolbar, ToolbarSpacer, ToolbarSeparator,
+            OverflowToolbar, ToolbarSpacer,
             SearchField,
             Table, Column, ColumnListItem,
-            ObjectStatus, ObjectAttribute,
+            ObjectAttribute,
             MessageToast, MessageBox,
-            VBox, HBox,
-            Dialog, Input, Select, Item,
+            VBox,
+            Dialog, Input,
             Grid,
             ObjectPageLayout, ObjectPageHeader, ObjectPageSection, ObjectPageSubSection
         ) {
 
             /* ══════════════════════════════════════════════════════
-               COMPLIANCE DATA  (from Figma design node 1:22709)
+               COMPLIANCE DATA  (from Figma node 1:22885 / 1:23212)
                ══════════════════════════════════════════════════════ */
             var aTFCompliance = [
                 { bp:"U36-Volker Engineering Group", bpNo:"U36-S001",
                   payMethod:"National Electronic Funds (NEFT)",
                   requested:"100 USD", paid:"100 USD",
                   refNo:"TNDR-REF-VOLK", paidDate:"20.08.2026, 23:52:06",
-                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Paid" },
+                  reversalAmt:"", reversalDate:"", reversalRef:"", status:"Paid" },
                 { bp:"U35-Emersons Heating Systems", bpNo:"U35-S002",
                   payMethod:"National Electronic Funds (NEFT)",
                   requested:"100 USD", paid:"90 USD",
@@ -80,51 +88,44 @@
                   reversalRef:"REV-REF-EMER", status:"Reversd" },
                 { bp:"U34-Thermotechnik Heating GmbH", bpNo:"U34-S003",
                   payMethod:"National Electronic Funds (NEFT)",
-                  requested:"100 USD", paid:"–",
-                  refNo:"–", paidDate:"–",
-                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Waived" },
-                { bp:"U11 - Reliance", bpNo:"U11-001",
+                  requested:"100 USD", paid:"",
+                  refNo:"", paidDate:"",
+                  reversalAmt:"", reversalDate:"", reversalRef:"", status:"Waived" },
+                { bp:"U11 - Reliance", bpNo:"U11 -001",
                   payMethod:"National Electronic Funds (NEFT)",
-                  requested:"100 USD", paid:"–",
-                  refNo:"–", paidDate:"–",
-                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Not Paid" }
+                  requested:"100 USD", paid:"",
+                  refNo:"", paidDate:"",
+                  reversalAmt:"", reversalDate:"", reversalRef:"", status:"Not Paid" }
             ];
 
             var aEMDCompliance = [
-                { bp:"U36-Volker Engineering Group", bpNo:"U36-S001",
-                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
-                  paid:"2,000 USD", bankName:"SBI",
+                { bp:"U36-Volker Engineering Group", bpNo:"U36-5001",
+                  payMethod:"Bank Guarantee (BG)", requested:"2000 USD",
+                  paid:"2000 USD", bankName:"SBI",
                   refNo:"TNDR-REF-VOLK", paidDate:"20.08.2026, 23:52:06",
-                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Paid" },
+                  reversalAmt:"", reversalDate:"", reversalRef:"", status:"Paid" },
                 { bp:"U35-Emersons Heating Systems", bpNo:"U35-S002",
-                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
-                  paid:"1,500 USD", bankName:"HDFC",
+                  payMethod:"Bank Guarantee (BG)", requested:"2000 USD",
+                  paid:"1500 USD", bankName:"HDFC",
                   refNo:"TNDR-REF-EMER", paidDate:"24.08.2026, 23:52:06",
-                  reversalAmt:"1,500 USD", reversalDate:"26.08.2026, 23:52:06",
+                  reversalAmt:"1500 USD", reversalDate:"26.08.2026, 23:52:06",
                   reversalRef:"REV-REF-EMER", status:"Reversd" },
                 { bp:"U34-Thermotechnik Heating GmbH", bpNo:"U34-S003",
-                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
-                  paid:"–", bankName:"–",
-                  refNo:"–", paidDate:"–",
-                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Waived" },
-                { bp:"U11 - Reliance", bpNo:"U11-001",
-                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
-                  paid:"–", bankName:"–",
-                  refNo:"–", paidDate:"–",
-                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Not Paid" }
+                  payMethod:"Bank Guarantee (BG)", requested:"2000 USD",
+                  paid:"", bankName:"",
+                  refNo:"", paidDate:"",
+                  reversalAmt:"", reversalDate:"", reversalRef:"", status:"Waived" },
+                { bp:"U11 - Reliance", bpNo:"U11 -001",
+                  payMethod:"Bank Guarantee (BG)", requested:"2000 USD",
+                  paid:"", bankName:"",
+                  refNo:"", paidDate:"",
+                  reversalAmt:"", reversalDate:"", reversalRef:"", status:"Not Paid" }
             ];
 
             /* ══════════════════════════════════════════════════════
                HELPERS
                ══════════════════════════════════════════════════════ */
-            function complianceStatus(s) {
-                return s === "Paid"    ? "Success"
-                     : s === "Reversd" ? "Warning"
-                     : s === "Waived"  ? "None"
-                     : "Error";
-            }
-
-            /* Display-mode form field (label + read-only value) */
+            /* Display-mode label → value pair (vertical, per Figma FormGroup pattern) */
             function dispField(sLabel, sValue) {
                 return new VBox({ items:[
                     new Label({ text:sLabel }),
@@ -159,9 +160,9 @@
                MARK AS PAID DIALOG
                ══════════════════════════════════════════════════════ */
             var oMarkPaidRefInput  = new Input("idMarkPaidRef",  { placeholder:"e.g. TXN-2026-001", width:"100%" });
-            var oMarkPaidDateInput = new Input("idMarkPaidDate", { placeholder:"DD.MM.YYYY", width:"100%" });
-            var oMarkPaidAmtInput  = new Input("idMarkPaidAmt",  { placeholder:"e.g. 100 USD", width:"100%" });
-            var oMarkPaidDialog    = new Dialog({
+            var oMarkPaidDateInput = new Input("idMarkPaidDate", { placeholder:"DD.MM.YYYY",        width:"100%" });
+            var oMarkPaidAmtInput  = new Input("idMarkPaidAmt",  { placeholder:"e.g. 100 USD",      width:"100%" });
+            var oMarkPaidDialog = new Dialog({
                 title:"Mark as Paid", contentWidth:"30rem",
                 content:[
                     new VBox({ items:[
@@ -187,17 +188,18 @@
             });
 
             /* ══════════════════════════════════════════════════════
-               COMPLIANCE TABLES
+               COMPLIANCE TABLE TOOLBAR
+               Figma: Title → ToolbarSpacer → Search → Waive Off →
+                      Reverse → Mark as Paid → settings icon → full-screen icon
                ══════════════════════════════════════════════════════ */
             function makeComplianceToolbar(sTitle) {
                 return new OverflowToolbar({ content:[
                     new Title({ text:sTitle, level:"H4" }),
                     new ToolbarSpacer(),
-                    new SearchField({ width:"15rem", placeholder:"Search…" }),
-                    new ToolbarSeparator(),
-                    new Button({ text:"Waive Off",    type:"Transparent",
+                    new SearchField({ width:"15rem", placeholder:"Search" }),
+                    new Button({ text:"Waive Off", type:"Transparent",
                         press: function () { oWaiveDialog.open(); } }),
-                    new Button({ text:"Reverse",      type:"Transparent",
+                    new Button({ text:"Reverse", type:"Transparent",
                         press: function () {
                             MessageBox.confirm(
                                 "Reverse payment for selected supplier(s)?",
@@ -212,7 +214,6 @@
                     }),
                     new Button({ text:"Mark as Paid", type:"Transparent",
                         press: function () { oMarkPaidDialog.open(); } }),
-                    new ToolbarSeparator(),
                     new Button({ icon:"sap-icon://action-settings", type:"Transparent",
                         tooltip:"Column Settings",
                         press: function () { MessageToast.show("Column settings"); } }),
@@ -222,23 +223,27 @@
                 ]});
             }
 
-            /* Tender Fee Compliance table */
+            /* ══════════════════════════════════════════════════════
+               TENDER FEE COMPLIANCE TABLE  (Figma node 1:22885)
+               Columns: BP | Pay Method | Req Pmt Amt | Supplier Paid Amt |
+                        Ref No | Paid Date+Time | Rev Amt | Rev Date | Rev Ref | Status
+               ══════════════════════════════════════════════════════ */
             var oTFTable = new Table({
                 mode:               "MultiSelect",
                 sticky:             ["ColumnHeaders","HeaderToolbar"],
                 alternateRowColors: true,
                 headerToolbar: makeComplianceToolbar("Tender Fee Compliance (4)"),
                 columns:[
-                    new Column({ header:new Label({ text:"Business Partner" }),         width:"18rem" }),
-                    new Column({ header:new Label({ text:"Payment Method" }),           width:"14rem" }),
-                    new Column({ header:new Label({ text:"Requested Amount" }),         width:"11rem", hAlign:"End" }),
-                    new Column({ header:new Label({ text:"Supplier Paid Amount" }),     width:"11rem", hAlign:"End" }),
-                    new Column({ header:new Label({ text:"Reference Number" }),         width:"12rem" }),
-                    new Column({ header:new Label({ text:"Paid Date + Time" }),         width:"13rem" }),
-                    new Column({ header:new Label({ text:"Reversal Amount" }),          width:"11rem", hAlign:"End" }),
-                    new Column({ header:new Label({ text:"Reversal Date, Time" }),      width:"13rem" }),
-                    new Column({ header:new Label({ text:"Reversal Reference" }),       width:"12rem" }),
-                    new Column({ header:new Label({ text:"Status" }),                   width:"9rem"  })
+                    new Column({ header:new Label({ text:"Business Partner" }),           width:"18rem" }),
+                    new Column({ header:new Label({ text:"Payment Method" }),             width:"14rem" }),
+                    new Column({ header:new Label({ text:"Requested Payment Amount" }),   width:"13rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Supplier Paid Amount" }),       width:"12rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Reference Number" }),           width:"12rem" }),
+                    new Column({ header:new Label({ text:"Paid Date + Time" }),           width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Amount" }),            width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Reversal Date, Time" }),        width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Reference" }),         width:"12rem" }),
+                    new Column({ header:new Label({ text:"Status" }),                     width:"8rem"  })
                 ]
             });
             aTFCompliance.forEach(function (o, i) {
@@ -250,7 +255,7 @@
                                 press: function () { MessageToast.show("Open BP: " + o.bp); } }),
                             new Text({ text:o.bpNo })
                         ]}),
-                        new Text({ text:o.payMethod, wrapping:false }),
+                        new Text({ text:o.payMethod,    wrapping:false }),
                         new Text({ text:o.requested }),
                         new Text({ text:o.paid }),
                         new Text({ text:o.refNo }),
@@ -258,29 +263,33 @@
                         new Text({ text:o.reversalAmt }),
                         new Text({ text:o.reversalDate }),
                         new Text({ text:o.reversalRef }),
-                        new ObjectStatus({ text:o.status, state:complianceStatus(o.status) })
+                        new Text({ text:o.status })
                     ]
                 }));
             });
 
-            /* EMD Compliance table */
+            /* ══════════════════════════════════════════════════════
+               EMD COMPLIANCE TABLE  (Figma node 1:23212)
+               Columns: BP | Pay Method | Req Pmt Amt | Supplier Paid Amt | Bank Name |
+                        Ref No | Paid Date+Time | Rev Amt | Rev Date | Rev Ref | Status
+               ══════════════════════════════════════════════════════ */
             var oEMDTable = new Table({
                 mode:               "MultiSelect",
                 sticky:             ["ColumnHeaders","HeaderToolbar"],
                 alternateRowColors: true,
                 headerToolbar: makeComplianceToolbar("EMD Compliance (4)"),
                 columns:[
-                    new Column({ header:new Label({ text:"Business Partner" }),         width:"18rem" }),
-                    new Column({ header:new Label({ text:"Payment Method" }),           width:"14rem" }),
-                    new Column({ header:new Label({ text:"Requested Amount" }),         width:"11rem", hAlign:"End" }),
-                    new Column({ header:new Label({ text:"Supplier Paid Amount" }),     width:"11rem", hAlign:"End" }),
-                    new Column({ header:new Label({ text:"Bank Name" }),                width:"9rem"  }),
-                    new Column({ header:new Label({ text:"Reference Number" }),         width:"12rem" }),
-                    new Column({ header:new Label({ text:"Paid Date + Time" }),         width:"13rem" }),
-                    new Column({ header:new Label({ text:"Reversal Amount" }),          width:"11rem", hAlign:"End" }),
-                    new Column({ header:new Label({ text:"Reversal Date, Time" }),      width:"13rem" }),
-                    new Column({ header:new Label({ text:"Reversal Reference" }),       width:"12rem" }),
-                    new Column({ header:new Label({ text:"Status" }),                   width:"9rem"  })
+                    new Column({ header:new Label({ text:"Business Partner" }),           width:"18rem" }),
+                    new Column({ header:new Label({ text:"Payment Method" }),             width:"14rem" }),
+                    new Column({ header:new Label({ text:"Requested Payment Amount" }),   width:"13rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Supplier Paid Amount" }),       width:"12rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Bank Name" }),                  width:"8rem"  }),
+                    new Column({ header:new Label({ text:"Reference Number" }),           width:"12rem" }),
+                    new Column({ header:new Label({ text:"Paid Date + Time" }),           width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Amount" }),            width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Reversal Date, Time" }),        width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Reference" }),         width:"12rem" }),
+                    new Column({ header:new Label({ text:"Status" }),                     width:"8rem"  })
                 ]
             });
             aEMDCompliance.forEach(function (o, i) {
@@ -292,7 +301,7 @@
                                 press: function () { MessageToast.show("Open BP: " + o.bp); } }),
                             new Text({ text:o.bpNo })
                         ]}),
-                        new Text({ text:o.payMethod, wrapping:false }),
+                        new Text({ text:o.payMethod,    wrapping:false }),
                         new Text({ text:o.requested }),
                         new Text({ text:o.paid }),
                         new Text({ text:o.bankName }),
@@ -301,32 +310,31 @@
                         new Text({ text:o.reversalAmt }),
                         new Text({ text:o.reversalDate }),
                         new Text({ text:o.reversalRef }),
-                        new ObjectStatus({ text:o.status, state:complianceStatus(o.status) })
+                        new Text({ text:o.status })
                     ]
                 }));
             });
 
             /* ══════════════════════════════════════════════════════
                OBJECT PAGE LAYOUT
-               Sourcing Project "5764 – Tender fee + Bid Bond"
                Matches Figma design node 1:22709
                ══════════════════════════════════════════════════════ */
             var oObjectPageLayout = new ObjectPageLayout({
                 useIconTabBar:            true,
                 showTitleInHeaderContent: false,
+                selectedSection:          "secTenderFeeEMD",
 
-                /* ── Header Title ── */
+                /* ── Header Title  (Figma node 1:22740) ── */
                 headerTitle: new ObjectPageHeader({
                     objectTitle:    "Tender fee + Bid Bond",
                     objectSubtitle: "5764",
                     breadCrumbs: new Breadcrumbs({
-                        links:[ new Link({ text:"Manage Sourcing Projects",
-                            href:"index.html" }) ],
+                        links:[ new Link({ text:"Manage Sourcing Projects", href:"index.html" }) ],
                         currentLocationText:"Sourcing Project"
                     }),
                     actions:[
                         new Button({ text:"Edit", type:"Emphasized",
-                            press: function () { MessageToast.show("Edit – not implemented in prototype"); } }),
+                            press: function () { MessageToast.show("Edit – prototype only"); } }),
                         new Button({ text:"Delete",
                             press: function () {
                                 MessageBox.confirm("Delete Sourcing Project 5764?", {
@@ -339,126 +347,167 @@
                             }
                         }),
                         new Button({ text:"Copy",
-                            press: function () { MessageToast.show("Copy – not implemented in prototype"); } }),
+                            press: function () { MessageToast.show("Copy – prototype only"); } }),
                         new Button({ text:"Change Log",
-                            press: function () { MessageToast.show("Change Log – not implemented in prototype"); } }),
+                            press: function () { MessageToast.show("Change Log – prototype only"); } }),
                         new Button({ text:"Create Purchasing Questionnaire",
-                            press: function () { MessageToast.show("Create PQ – not implemented in prototype"); } }),
+                            press: function () { MessageToast.show("Create PQ – prototype only"); } }),
                         new Button({ icon:"sap-icon://share-2", type:"Transparent", tooltip:"Share",
                             press: function () { MessageToast.show("Share link copied."); } })
                     ]
                 }),
 
-                /* ── Expandable Header Content (attributes / facets) ── */
+                /* ── Header Content / Facets  (Figma node 1:22765) ──
+                   Facet 1 (left): 5 ObjectAttributes stacked vertically
+                   Facet 2–4: Status / Phase / Integration Scenario      */
                 headerContent:[
                     new Grid({ defaultSpan:"L3 M4 S6", containerQuery:true, content:[
-                        new ObjectAttribute({ title:"Sourcing Project Version", text:"1" }),
-                        new ObjectAttribute({ title:"Sourcing Project Type",
-                            text:"PPS Sourcing Project – Standard Sourcing (PS)" }),
-                        new ObjectAttribute({ title:"Submission Deadline",
-                            text:"31.12.2026, 10:41:53" }),
-                        new ObjectAttribute({ title:"Total Target Amount",      text:"0,00 USD" }),
-                        new ObjectAttribute({ title:"Approval Status",          text:"–" }),
-                        /* Status / Phase / Integration Scenario facets */
+                        /* Facet 1 – 5 label-value attributes (inline, sap.m.ObjectAttribute) */
                         new VBox({ items:[
-                            new Label({ text:"Status" }),
-                            new Text({ text:"In Preparation" }).addStyleClass("sapUiSmallMarginTop")
+                            new ObjectAttribute({ title:"Sourcing Project Version:", text:"1" }),
+                            new ObjectAttribute({ title:"Sourcing Project Type:",
+                                text:"PPS Sourcing Project – Standard Sourcing (PS)" }),
+                            new ObjectAttribute({ title:"Submission Deadline:",
+                                text:"31.12.2026, 10:41:53" }),
+                            new ObjectAttribute({ title:"Total Target amount:", text:"0,00 USD" }),
+                            new ObjectAttribute({ title:"Approval Status:",     text:"–" })
                         ]}),
+                        /* Facet 2 – Status */
                         new VBox({ items:[
-                            new Label({ text:"Phase" }),
-                            new Text({ text:"–" }).addStyleClass("sapUiSmallMarginTop")
+                            new Label({ text:"Status" }).addStyleClass("sapUiSmallMarginBottom"),
+                            new Title({ text:"In Preparation", level:"H5" })
                         ]}),
+                        /* Facet 3 – Phase */
                         new VBox({ items:[
-                            new Label({ text:"Integration Scenario" }),
-                            new Text({ text:"–" }).addStyleClass("sapUiSmallMarginTop")
+                            new Label({ text:"Phase" }).addStyleClass("sapUiSmallMarginBottom"),
+                            new Text({ text:"–" })
+                        ]}),
+                        /* Facet 4 – Integration Scenario */
+                        new VBox({ items:[
+                            new Label({ text:"Integration Scenario" }).addStyleClass("sapUiSmallMarginBottom"),
+                            new Text({ text:"–" })
                         ]})
                     ]})
                 ],
 
-                /* ── Sections (tabs) ── */
+                /* ══════════════════════════════════════════════════
+                   SECTIONS / TABS
+                   Tab order matches Figma icon-tab-bar (node 1:22772):
+                   General Information | Delivery and Payment Terms |
+                   Contact | Items | Supplier List | Supplier Quotations |
+                   Negotiations | Allocation Proposals | Awarding Scenarios |
+                   Legal Transactions | [Tender Fee and EMD ✓] |
+                   Notes | Attachments | +3
+                   ══════════════════════════════════════════════════ */
                 sections:[
-
-                    /* Placeholder tabs */
                     new ObjectPageSection({ title:"General Information", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
                     new ObjectPageSection({ title:"Delivery and Payment Terms", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
+                    new ObjectPageSection({ title:"Contact", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
                     new ObjectPageSection({ title:"Items", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
                     new ObjectPageSection({ title:"Supplier List", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
                     new ObjectPageSection({ title:"Supplier Quotations", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
 
-                    /* ── Active tab: Tender Fee and EMD ── */
+                    new ObjectPageSection({ title:"Negotiations", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
+                    new ObjectPageSection({ title:"Allocation Proposals", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
+                    new ObjectPageSection({ title:"Awarding Scenarios", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
+                    new ObjectPageSection({ title:"Legal Transactions", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
+                    /* ════════════════════════════════════════════
+                       ACTIVE TAB: Tender Fee and EMD
+                       ════════════════════════════════════════════ */
                     new ObjectPageSection({
+                        id:             "secTenderFeeEMD",
                         title:          "Tender Fee and EMD",
                         titleUppercase: false,
                         subSections:[
 
-                            /* SubSection 1 – TF & EMD Requirement form */
+                            /* ── SubSection: Overview  (Figma node 1:22775) ──
+                               4-column form matching Figma FormGroup01…04
+                               Col 1: Tender Fee Requirement header + 3 fields
+                               Col 2: 2 fields (no header)
+                               Col 3: EMD Requirement header + 3 fields
+                               Col 4: 3 fields (no header)                       */
                             new ObjectPageSubSection({
-                                title:          "Tender Fee and EMD",
+                                title:          "Overview",
                                 titleUppercase: false,
                                 blocks:[
-                                    new Grid({ defaultSpan:"L6 M12 S12",
-                                               containerQuery:true, content:[
-
-                                        /* ── Tender Fee Requirement (left) ── */
-                                        new VBox({ items:[
-                                            new Title({ text:"Tender Fee Requirement", level:"H5" })
-                                                .addStyleClass("sapUiSmallMarginBottom"),
-                                            new Grid({ defaultSpan:"L6 M6 S12",
-                                                       containerQuery:true, content:[
-                                                dispField("Tender Fee Amount Type",
-                                                          "Fixed (01)"),
-                                                dispField("Block SP Details if Not Paid",
+                                    new Grid({
+                                        defaultSpan:    "L3 M6 S12",
+                                        containerQuery: true,
+                                        hSpacing:       2,
+                                        content:[
+                                            /* FormGroup01 – col 1 */
+                                            new VBox({ items:[
+                                                new Title({ text:"Tender Fee Requirement",
+                                                    level:"H6", titleStyle:"H6" })
+                                                    .addStyleClass("sapUiSmallMarginBottom"),
+                                                dispField("Tender Fee Amount Type:", "Fixed (01)"),
+                                                dispField("Tender Fee Amount:",       "100 USD"),
+                                                dispField("Payment Deadline:",         "21.09.2026")
+                                            ]}),
+                                            /* FormGroup02 – col 2 (no header) */
+                                            new VBox({ items:[
+                                                dispField("Block Sourcing Project details (If not Paid)",
                                                           "Yes"),
-                                                dispField("Tender Fee Amount",
-                                                          "100 USD"),
-                                                dispField("Payment Method",
-                                                          "National Electronic Funds (NEFT)"),
-                                                dispField("Payment Deadline",
-                                                          "21.09.2026")
-                                            ]})
-                                        ]}).addStyleClass("sapUiMediumPaddingEnd"),
-
-                                        /* ── EMD Requirement (right) ── */
-                                        new VBox({ items:[
-                                            new Title({ text:"EMD Requirement", level:"H5" })
-                                                .addStyleClass("sapUiSmallMarginBottom"),
-                                            new Grid({ defaultSpan:"L6 M6 S12",
-                                                       containerQuery:true, content:[
-                                                dispField("EMD Amount Type",
-                                                          "% of Bid Amount (02)"),
-                                                dispField("EMD %",
-                                                          "10%"),
-                                                dispField("EMD Amount",
-                                                          "2,000 USD"),
-                                                dispField("EMD Submission Deadline",
-                                                          "01.11.2026"),
-                                                dispField("Block Award Quote if Not Paid",
-                                                          "Yes"),
-                                                dispField("Payment Method",
+                                                dispField("Payment Method:",
+                                                          "National Electronic Funds (NEFT)")
+                                            ]}),
+                                            /* FormGroup03 – col 3 */
+                                            new VBox({ items:[
+                                                new Title({ text:"EMD Requirement",
+                                                    level:"H6", titleStyle:"H6" })
+                                                    .addStyleClass("sapUiSmallMarginBottom"),
+                                                dispField("EMD Amount Type:",   "% of Bid Amount (02)"),
+                                                dispField("EMD %:",              "10%"),
+                                                dispField("EMD Amount:",         "2000 USD")
+                                            ]}),
+                                            /* FormGroup04 – col 4 (no header) */
+                                            new VBox({ items:[
+                                                dispField("EMD Submission Deadline:",         "01.11.2026"),
+                                                dispField("Block Award Quote (If not Paid):", "Yes"),
+                                                dispField("Payment Method:",
                                                           "Bank Guarantee Offline (BG)")
                                             ]})
-                                        ]})
-                                    ]})
+                                        ]
+                                    }).addStyleClass("ppsFormCard")
                                 ]
                             }),
 
-                            /* SubSection 2 – EMD Instructions */
+                            /* ── SubSection: EMD Instructions ── */
                             new ObjectPageSubSection({
                                 title:          "EMD Instructions",
                                 titleUppercase: false,
                                 blocks:[
                                     new VBox({ items:[
-                                        new Label({ text:"Notes", design:"Bold" })
+                                        new Label({ text:"Title", design:"Bold" })
                                             .addStyleClass("sapUiSmallMarginBottom"),
                                         new Text({
                                             text: "EMD shall be submitted in the form of a Bank Guarantee / " +
@@ -472,7 +521,7 @@
                                 ]
                             }),
 
-                            /* SubSection 3 – Bidder Compliance */
+                            /* ── SubSection: Bidder Compliance ── */
                             new ObjectPageSubSection({
                                 title:          "Bidder Compliance",
                                 titleUppercase: false,
@@ -487,10 +536,10 @@
                         ]
                     }),
 
-                    /* More placeholder tabs */
                     new ObjectPageSection({ title:"Notes", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
                     new ObjectPageSection({ title:"Attachments", titleUppercase:false,
                         subSections:[ new ObjectPageSubSection({ titleUppercase:false,
                             blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] })
@@ -498,7 +547,7 @@
             });
 
             /* ══════════════════════════════════════════════════════
-               SHELL BAR + APP
+               SHELL BAR + PAGE + APP
                ══════════════════════════════════════════════════════ */
             var oShellBar = new ShellBar({
                 title:          "SAP S/4HANA",
