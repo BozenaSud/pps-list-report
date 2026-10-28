@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PPS – Tender Fee and EMD – Object Page</title>
+    <script id="sap-ui-bootstrap"
+        src="https://ui5.sap.com/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m,sap.f,sap.ui.layout,sap.ui.core,sap.uxap"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-oninit="onInit">
+    </script>
+    <script>
+    "use strict";
+    function onInit() {
+        sap.ui.require([
+            "sap/m/App",
+            "sap/m/Page",
+            "sap/f/ShellBar",
+            "sap/m/Avatar",
+            "sap/m/Title",
+            "sap/m/Text",
+            "sap/m/Label",
+            "sap/m/Link",
+            "sap/m/Breadcrumbs",
+            "sap/m/Button",
+            "sap/m/OverflowToolbar",
+            "sap/m/ToolbarSpacer",
+            "sap/m/ToolbarSeparator",
+            "sap/m/SearchField",
+            "sap/m/Table",
+            "sap/m/Column",
+            "sap/m/ColumnListItem",
+            "sap/m/ObjectStatus",
+            "sap/m/ObjectAttribute",
+            "sap/m/MessageToast",
+            "sap/m/MessageBox",
+            "sap/m/VBox",
+            "sap/m/HBox",
+            "sap/m/Dialog",
+            "sap/m/Input",
+            "sap/m/Select",
+            "sap/ui/core/Item",
+            "sap/ui/layout/Grid",
+            "sap/uxap/ObjectPageLayout",
+            "sap/uxap/ObjectPageHeader",
+            "sap/uxap/ObjectPageSection",
+            "sap/uxap/ObjectPageSubSection"
+        ], function (
+            App, Page, ShellBar, Avatar,
+            Title, Text, Label, Link, Breadcrumbs,
+            Button,
+            OverflowToolbar, ToolbarSpacer, ToolbarSeparator,
+            SearchField,
+            Table, Column, ColumnListItem,
+            ObjectStatus, ObjectAttribute,
+            MessageToast, MessageBox,
+            VBox, HBox,
+            Dialog, Input, Select, Item,
+            Grid,
+            ObjectPageLayout, ObjectPageHeader, ObjectPageSection, ObjectPageSubSection
+        ) {
+
+            /* ══════════════════════════════════════════════════════
+               COMPLIANCE DATA  (from Figma design node 1:22709)
+               ══════════════════════════════════════════════════════ */
+            var aTFCompliance = [
+                { bp:"U36-Volker Engineering Group", bpNo:"U36-S001",
+                  payMethod:"National Electronic Funds (NEFT)",
+                  requested:"100 USD", paid:"100 USD",
+                  refNo:"TNDR-REF-VOLK", paidDate:"20.08.2026, 23:52:06",
+                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Paid" },
+                { bp:"U35-Emersons Heating Systems", bpNo:"U35-S002",
+                  payMethod:"National Electronic Funds (NEFT)",
+                  requested:"100 USD", paid:"90 USD",
+                  refNo:"TNDR-REF-EMER", paidDate:"24.08.2026, 23:52:06",
+                  reversalAmt:"90 USD", reversalDate:"26.08.2026, 23:52:06",
+                  reversalRef:"REV-REF-EMER", status:"Reversd" },
+                { bp:"U34-Thermotechnik Heating GmbH", bpNo:"U34-S003",
+                  payMethod:"National Electronic Funds (NEFT)",
+                  requested:"100 USD", paid:"–",
+                  refNo:"–", paidDate:"–",
+                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Waived" },
+                { bp:"U11 - Reliance", bpNo:"U11-001",
+                  payMethod:"National Electronic Funds (NEFT)",
+                  requested:"100 USD", paid:"–",
+                  refNo:"–", paidDate:"–",
+                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Not Paid" }
+            ];
+
+            var aEMDCompliance = [
+                { bp:"U36-Volker Engineering Group", bpNo:"U36-S001",
+                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
+                  paid:"2,000 USD", bankName:"SBI",
+                  refNo:"TNDR-REF-VOLK", paidDate:"20.08.2026, 23:52:06",
+                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Paid" },
+                { bp:"U35-Emersons Heating Systems", bpNo:"U35-S002",
+                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
+                  paid:"1,500 USD", bankName:"HDFC",
+                  refNo:"TNDR-REF-EMER", paidDate:"24.08.2026, 23:52:06",
+                  reversalAmt:"1,500 USD", reversalDate:"26.08.2026, 23:52:06",
+                  reversalRef:"REV-REF-EMER", status:"Reversd" },
+                { bp:"U34-Thermotechnik Heating GmbH", bpNo:"U34-S003",
+                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
+                  paid:"–", bankName:"–",
+                  refNo:"–", paidDate:"–",
+                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Waived" },
+                { bp:"U11 - Reliance", bpNo:"U11-001",
+                  payMethod:"Bank Guarantee (BG)", requested:"2,000 USD",
+                  paid:"–", bankName:"–",
+                  refNo:"–", paidDate:"–",
+                  reversalAmt:"–", reversalDate:"–", reversalRef:"–", status:"Not Paid" }
+            ];
+
+            /* ══════════════════════════════════════════════════════
+               HELPERS
+               ══════════════════════════════════════════════════════ */
+            function complianceStatus(s) {
+                return s === "Paid"    ? "Success"
+                     : s === "Reversd" ? "Warning"
+                     : s === "Waived"  ? "None"
+                     : "Error";
+            }
+
+            /* Display-mode form field (label + read-only value) */
+            function dispField(sLabel, sValue) {
+                return new VBox({ items:[
+                    new Label({ text:sLabel }),
+                    new Text({ text:sValue || "–", wrapping:false })
+                ]}).addStyleClass("sapUiSmallMarginBottom");
+            }
+
+            /* ══════════════════════════════════════════════════════
+               WAIVE OFF DIALOG
+               ══════════════════════════════════════════════════════ */
+            var oWaiveInput = new Input("idWaiveReason", { placeholder:"Enter waiver reason…", width:"100%" });
+            var oWaiveDialog = new Dialog({
+                title:"Waive Off",
+                content:[
+                    new VBox({ items:[
+                        new Label({ text:"Waiver Reason", labelFor:"idWaiveReason" })
+                            .addStyleClass("sapUiSmallMarginBottom"),
+                        oWaiveInput
+                    ]}).addStyleClass("sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom")
+                ],
+                beginButton: new Button({ text:"Cancel",
+                    press: function () { oWaiveDialog.close(); } }),
+                endButton: new Button({ text:"Confirm Waiver", type:"Emphasized",
+                    press: function () {
+                        MessageToast.show("Waiver confirmed.");
+                        oWaiveDialog.close();
+                    }
+                })
+            });
+
+            /* ══════════════════════════════════════════════════════
+               MARK AS PAID DIALOG
+               ══════════════════════════════════════════════════════ */
+            var oMarkPaidRefInput  = new Input("idMarkPaidRef",  { placeholder:"e.g. TXN-2026-001", width:"100%" });
+            var oMarkPaidDateInput = new Input("idMarkPaidDate", { placeholder:"DD.MM.YYYY", width:"100%" });
+            var oMarkPaidAmtInput  = new Input("idMarkPaidAmt",  { placeholder:"e.g. 100 USD", width:"100%" });
+            var oMarkPaidDialog    = new Dialog({
+                title:"Mark as Paid", contentWidth:"30rem",
+                content:[
+                    new VBox({ items:[
+                        new Label({ text:"Payment Reference", labelFor:"idMarkPaidRef" })
+                            .addStyleClass("sapUiSmallMarginBottom"),
+                        oMarkPaidRefInput,
+                        new Label({ text:"Paid Date", labelFor:"idMarkPaidDate" })
+                            .addStyleClass("sapUiSmallMarginTop sapUiSmallMarginBottom"),
+                        oMarkPaidDateInput,
+                        new Label({ text:"Paid Amount", labelFor:"idMarkPaidAmt" })
+                            .addStyleClass("sapUiSmallMarginTop sapUiSmallMarginBottom"),
+                        oMarkPaidAmtInput
+                    ]}).addStyleClass("sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom")
+                ],
+                beginButton: new Button({ text:"Cancel",
+                    press: function () { oMarkPaidDialog.close(); } }),
+                endButton: new Button({ text:"Save", type:"Emphasized",
+                    press: function () {
+                        MessageToast.show("Payment status updated.");
+                        oMarkPaidDialog.close();
+                    }
+                })
+            });
+
+            /* ══════════════════════════════════════════════════════
+               COMPLIANCE TABLES
+               ══════════════════════════════════════════════════════ */
+            function makeComplianceToolbar(sTitle) {
+                return new OverflowToolbar({ content:[
+                    new Title({ text:sTitle, level:"H4" }),
+                    new ToolbarSpacer(),
+                    new SearchField({ width:"15rem", placeholder:"Search…" }),
+                    new ToolbarSeparator(),
+                    new Button({ text:"Waive Off",    type:"Transparent",
+                        press: function () { oWaiveDialog.open(); } }),
+                    new Button({ text:"Reverse",      type:"Transparent",
+                        press: function () {
+                            MessageBox.confirm(
+                                "Reverse payment for selected supplier(s)?",
+                                { title:"Confirm Reversal",
+                                  onClose: function (a) {
+                                      if (a === MessageBox.Action.OK)
+                                          MessageToast.show("Reversal submitted.");
+                                  }
+                                }
+                            );
+                        }
+                    }),
+                    new Button({ text:"Mark as Paid", type:"Transparent",
+                        press: function () { oMarkPaidDialog.open(); } }),
+                    new ToolbarSeparator(),
+                    new Button({ icon:"sap-icon://action-settings", type:"Transparent",
+                        tooltip:"Column Settings",
+                        press: function () { MessageToast.show("Column settings"); } }),
+                    new Button({ icon:"sap-icon://full-screen", type:"Transparent",
+                        tooltip:"Full Screen",
+                        press: function () { MessageToast.show("Full screen"); } })
+                ]});
+            }
+
+            /* Tender Fee Compliance table */
+            var oTFTable = new Table({
+                mode:               "MultiSelect",
+                sticky:             ["ColumnHeaders","HeaderToolbar"],
+                alternateRowColors: true,
+                headerToolbar: makeComplianceToolbar("Tender Fee Compliance (4)"),
+                columns:[
+                    new Column({ header:new Label({ text:"Business Partner" }),         width:"18rem" }),
+                    new Column({ header:new Label({ text:"Payment Method" }),           width:"14rem" }),
+                    new Column({ header:new Label({ text:"Requested Amount" }),         width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Supplier Paid Amount" }),     width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Reference Number" }),         width:"12rem" }),
+                    new Column({ header:new Label({ text:"Paid Date + Time" }),         width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Amount" }),          width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Reversal Date, Time" }),      width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Reference" }),       width:"12rem" }),
+                    new Column({ header:new Label({ text:"Status" }),                   width:"9rem"  })
+                ]
+            });
+            aTFCompliance.forEach(function (o, i) {
+                oTFTable.addItem(new ColumnListItem({
+                    selected: i === 0,
+                    cells:[
+                        new VBox({ items:[
+                            new Link({ text:o.bp, subtle:false,
+                                press: function () { MessageToast.show("Open BP: " + o.bp); } }),
+                            new Text({ text:o.bpNo })
+                        ]}),
+                        new Text({ text:o.payMethod, wrapping:false }),
+                        new Text({ text:o.requested }),
+                        new Text({ text:o.paid }),
+                        new Text({ text:o.refNo }),
+                        new Text({ text:o.paidDate }),
+                        new Text({ text:o.reversalAmt }),
+                        new Text({ text:o.reversalDate }),
+                        new Text({ text:o.reversalRef }),
+                        new ObjectStatus({ text:o.status, state:complianceStatus(o.status) })
+                    ]
+                }));
+            });
+
+            /* EMD Compliance table */
+            var oEMDTable = new Table({
+                mode:               "MultiSelect",
+                sticky:             ["ColumnHeaders","HeaderToolbar"],
+                alternateRowColors: true,
+                headerToolbar: makeComplianceToolbar("EMD Compliance (4)"),
+                columns:[
+                    new Column({ header:new Label({ text:"Business Partner" }),         width:"18rem" }),
+                    new Column({ header:new Label({ text:"Payment Method" }),           width:"14rem" }),
+                    new Column({ header:new Label({ text:"Requested Amount" }),         width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Supplier Paid Amount" }),     width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Bank Name" }),                width:"9rem"  }),
+                    new Column({ header:new Label({ text:"Reference Number" }),         width:"12rem" }),
+                    new Column({ header:new Label({ text:"Paid Date + Time" }),         width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Amount" }),          width:"11rem", hAlign:"End" }),
+                    new Column({ header:new Label({ text:"Reversal Date, Time" }),      width:"13rem" }),
+                    new Column({ header:new Label({ text:"Reversal Reference" }),       width:"12rem" }),
+                    new Column({ header:new Label({ text:"Status" }),                   width:"9rem"  })
+                ]
+            });
+            aEMDCompliance.forEach(function (o, i) {
+                oEMDTable.addItem(new ColumnListItem({
+                    selected: i === 0,
+                    cells:[
+                        new VBox({ items:[
+                            new Link({ text:o.bp,
+                                press: function () { MessageToast.show("Open BP: " + o.bp); } }),
+                            new Text({ text:o.bpNo })
+                        ]}),
+                        new Text({ text:o.payMethod, wrapping:false }),
+                        new Text({ text:o.requested }),
+                        new Text({ text:o.paid }),
+                        new Text({ text:o.bankName }),
+                        new Text({ text:o.refNo }),
+                        new Text({ text:o.paidDate }),
+                        new Text({ text:o.reversalAmt }),
+                        new Text({ text:o.reversalDate }),
+                        new Text({ text:o.reversalRef }),
+                        new ObjectStatus({ text:o.status, state:complianceStatus(o.status) })
+                    ]
+                }));
+            });
+
+            /* ══════════════════════════════════════════════════════
+               OBJECT PAGE LAYOUT
+               Sourcing Project "5764 – Tender fee + Bid Bond"
+               Matches Figma design node 1:22709
+               ══════════════════════════════════════════════════════ */
+            var oObjectPageLayout = new ObjectPageLayout({
+                useIconTabBar:            true,
+                showTitleInHeaderContent: false,
+
+                /* ── Header Title ── */
+                headerTitle: new ObjectPageHeader({
+                    objectTitle:    "Tender fee + Bid Bond",
+                    objectSubtitle: "5764",
+                    breadCrumbs: new Breadcrumbs({
+                        links:[ new Link({ text:"Manage Sourcing Projects",
+                            href:"index.html" }) ],
+                        currentLocationText:"Sourcing Project"
+                    }),
+                    actions:[
+                        new Button({ text:"Edit", type:"Emphasized",
+                            press: function () { MessageToast.show("Edit – not implemented in prototype"); } }),
+                        new Button({ text:"Delete",
+                            press: function () {
+                                MessageBox.confirm("Delete Sourcing Project 5764?", {
+                                    title:"Delete",
+                                    onClose: function (a) {
+                                        if (a === MessageBox.Action.OK)
+                                            MessageToast.show("Deleted (prototype only)");
+                                    }
+                                });
+                            }
+                        }),
+                        new Button({ text:"Copy",
+                            press: function () { MessageToast.show("Copy – not implemented in prototype"); } }),
+                        new Button({ text:"Change Log",
+                            press: function () { MessageToast.show("Change Log – not implemented in prototype"); } }),
+                        new Button({ text:"Create Purchasing Questionnaire",
+                            press: function () { MessageToast.show("Create PQ – not implemented in prototype"); } }),
+                        new Button({ icon:"sap-icon://share-2", type:"Transparent", tooltip:"Share",
+                            press: function () { MessageToast.show("Share link copied."); } })
+                    ]
+                }),
+
+                /* ── Expandable Header Content (attributes / facets) ── */
+                headerContent:[
+                    new Grid({ defaultSpan:"L3 M4 S6", containerQuery:true, content:[
+                        new ObjectAttribute({ title:"Sourcing Project Version", text:"1" }),
+                        new ObjectAttribute({ title:"Sourcing Project Type",
+                            text:"PPS Sourcing Project – Standard Sourcing (PS)" }),
+                        new ObjectAttribute({ title:"Submission Deadline",
+                            text:"31.12.2026, 10:41:53" }),
+                        new ObjectAttribute({ title:"Total Target Amount",      text:"0,00 USD" }),
+                        new ObjectAttribute({ title:"Approval Status",          text:"–" }),
+                        /* Status / Phase / Integration Scenario facets */
+                        new VBox({ items:[
+                            new Label({ text:"Status" }),
+                            new Text({ text:"In Preparation" }).addStyleClass("sapUiSmallMarginTop")
+                        ]}),
+                        new VBox({ items:[
+                            new Label({ text:"Phase" }),
+                            new Text({ text:"–" }).addStyleClass("sapUiSmallMarginTop")
+                        ]}),
+                        new VBox({ items:[
+                            new Label({ text:"Integration Scenario" }),
+                            new Text({ text:"–" }).addStyleClass("sapUiSmallMarginTop")
+                        ]})
+                    ]})
+                ],
+
+                /* ── Sections (tabs) ── */
+                sections:[
+
+                    /* Placeholder tabs */
+                    new ObjectPageSection({ title:"General Information", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+                    new ObjectPageSection({ title:"Delivery and Payment Terms", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+                    new ObjectPageSection({ title:"Items", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+                    new ObjectPageSection({ title:"Supplier List", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+                    new ObjectPageSection({ title:"Supplier Quotations", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+
+                    /* ── Active tab: Tender Fee and EMD ── */
+                    new ObjectPageSection({
+                        title:          "Tender Fee and EMD",
+                        titleUppercase: false,
+                        subSections:[
+
+                            /* SubSection 1 – TF & EMD Requirement form */
+                            new ObjectPageSubSection({
+                                title:          "Tender Fee and EMD",
+                                titleUppercase: false,
+                                blocks:[
+                                    new Grid({ defaultSpan:"L6 M12 S12",
+                                               containerQuery:true, content:[
+
+                                        /* ── Tender Fee Requirement (left) ── */
+                                        new VBox({ items:[
+                                            new Title({ text:"Tender Fee Requirement", level:"H5" })
+                                                .addStyleClass("sapUiSmallMarginBottom"),
+                                            new Grid({ defaultSpan:"L6 M6 S12",
+                                                       containerQuery:true, content:[
+                                                dispField("Tender Fee Amount Type",
+                                                          "Fixed (01)"),
+                                                dispField("Block SP Details if Not Paid",
+                                                          "Yes"),
+                                                dispField("Tender Fee Amount",
+                                                          "100 USD"),
+                                                dispField("Payment Method",
+                                                          "National Electronic Funds (NEFT)"),
+                                                dispField("Payment Deadline",
+                                                          "21.09.2026")
+                                            ]})
+                                        ]}).addStyleClass("sapUiMediumPaddingEnd"),
+
+                                        /* ── EMD Requirement (right) ── */
+                                        new VBox({ items:[
+                                            new Title({ text:"EMD Requirement", level:"H5" })
+                                                .addStyleClass("sapUiSmallMarginBottom"),
+                                            new Grid({ defaultSpan:"L6 M6 S12",
+                                                       containerQuery:true, content:[
+                                                dispField("EMD Amount Type",
+                                                          "% of Bid Amount (02)"),
+                                                dispField("EMD %",
+                                                          "10%"),
+                                                dispField("EMD Amount",
+                                                          "2,000 USD"),
+                                                dispField("EMD Submission Deadline",
+                                                          "01.11.2026"),
+                                                dispField("Block Award Quote if Not Paid",
+                                                          "Yes"),
+                                                dispField("Payment Method",
+                                                          "Bank Guarantee Offline (BG)")
+                                            ]})
+                                        ]})
+                                    ]})
+                                ]
+                            }),
+
+                            /* SubSection 2 – EMD Instructions */
+                            new ObjectPageSubSection({
+                                title:          "EMD Instructions",
+                                titleUppercase: false,
+                                blocks:[
+                                    new VBox({ items:[
+                                        new Label({ text:"Notes", design:"Bold" })
+                                            .addStyleClass("sapUiSmallMarginBottom"),
+                                        new Text({
+                                            text: "EMD shall be submitted in the form of a Bank Guarantee / " +
+                                                  "Demand Draft drawn in favour of the National Highways " +
+                                                  "Authority of India. The EMD will be forfeited if the bidder " +
+                                                  "withdraws the bid after the deadline or fails to execute " +
+                                                  "the agreement after award.",
+                                            wrapping: true
+                                        })
+                                    ]}).addStyleClass("sapUiSmallPaddingAll")
+                                ]
+                            }),
+
+                            /* SubSection 3 – Bidder Compliance */
+                            new ObjectPageSubSection({
+                                title:          "Bidder Compliance",
+                                titleUppercase: false,
+                                blocks:[
+                                    new VBox({ items:[
+                                        oTFTable,
+                                        new VBox().addStyleClass("sapUiLargeMarginTop"),
+                                        oEMDTable
+                                    ]})
+                                ]
+                            })
+                        ]
+                    }),
+
+                    /* More placeholder tabs */
+                    new ObjectPageSection({ title:"Notes", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] }),
+                    new ObjectPageSection({ title:"Attachments", titleUppercase:false,
+                        subSections:[ new ObjectPageSubSection({ titleUppercase:false,
+                            blocks:[ new Text({ text:"Not shown in this prototype." }) ] }) ] })
+                ]
+            });
+
+            /* ══════════════════════════════════════════════════════
+               SHELL BAR + APP
+               ══════════════════════════════════════════════════════ */
+            var oShellBar = new ShellBar({
+                title:          "SAP S/4HANA",
+                secondTitle:    "Procurement for Public Sector",
+                showMenuButton: false,
+                avatar: new Avatar({ initials:"BS", displayShape:"Circle",
+                                     tooltip:"Bozena Sudova" })
+            });
+
+            new App({ pages:[
+                new Page({
+                    showHeader:      false,
+                    customHeader:    oShellBar,
+                    enableScrolling: false,
+                    content:[ oObjectPageLayout ]
+                })
+            ]}).placeAt("content");
+        });
+    }
+    </script>
+</head>
+<body class="sapUiBody" id="body">
+    <div id="content"></div>
+</body>
+</html>
